@@ -12,7 +12,7 @@ drone-delivery-powered-by-depin/
 ├── hardware/                         
 │   ├── esp32-drone/                 # delivery drone
 │   └── docs/                        # Hardware documentation
-└── docs/                          # Architecture diagram
+└── docs/                          # Architecture diagrams, whitepaper
 ```
 
 ## Key Components
