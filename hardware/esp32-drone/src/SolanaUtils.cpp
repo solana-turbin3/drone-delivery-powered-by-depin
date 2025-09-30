@@ -1,5 +1,6 @@
 #include "SolanaUtils.h"
 #include "IoTxChain-lib.h"
+#include "GetSolanaLogsUtils.h"
 
 // Function implementations
 
@@ -97,6 +98,7 @@ void sendAnchorInstructionWithPDA(
   String txBase64 = tx.serializeBase64();
 
   String txSig;
+//can also use sendRawTxAndGetLogs(txBase64, txSig);
   if (solana.sendRawTransaction(txBase64, txSig)) {
       Serial.println("✅ Anchor tx sent! Signature: " + txSig);
       confirmTransaction(txSig);
