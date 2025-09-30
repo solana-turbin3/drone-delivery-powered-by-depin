@@ -54,8 +54,14 @@ void sendAnchorInstructionWithPDA(
 ) {
   Serial.println("\n=== 🔹 Anchor Instruction with PDA (Generic) ===");
 
-  uint8_t privateKey[128] = "YOUR_PRIVATE_KEY_64_BYTE_BASE58"; // 64-byte base58 decoded
-
+  //uint8_t privateKey[128] = "YOUR_PRIVATE_KEY_64_BYTE_BASE58"; // 64-byte base58 decoded
+  uint8_t privateKey[128];
+  size_t privLen = sizeof(privateKey);
+  if (!base58Decode(PRIVATE_KEY_BASE58, privateKey, privLen) || privLen < 64) {
+      Serial.println("❌ Private key decode failed");
+      return;
+  }
+  
   Pubkey authority = Pubkey::fromBase58(PUBLIC_KEY_BASE58);
   Keypair signer = Keypair::fromPrivateKey(privateKey);
 

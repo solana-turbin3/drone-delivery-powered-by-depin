@@ -9,6 +9,8 @@
 extern IoTxChain solana;
 extern const String solanaRpcUrl;
 extern const String PUBLIC_KEY_BASE58;
+extern const String PRIVATE_KEY_BASE58;  // Added this line
+
 extern const String PROGRAM_ID;
 extern const String MINT;
 extern const String VAULT;
