@@ -8,14 +8,16 @@
 int val;
 float temperature;
 
-const char* ssid    = "SSID";//don't commit//2.4Ghz wifi for arduino esp32 nano
+const char* ssid    = "SSID";//don't commit //2.4Ghz wifi for arduino esp32 nano
 const char* password = "PASSWORD";//don't commit
 
 // Solana RPC URL (Devnet)
 const String solanaRpcUrl = "https://api.devnet.solana.com"; // or mainnet/testnet
 
 // Your Solana wallet (Base58 format)
+//don't commit
 const String PRIVATE_KEY_BASE58 = "PRIVATE_KEY_BASE58";  // 64-byte base58
+//don't commit
 const String PUBLIC_KEY_BASE58 = "";
 
 const String PROGRAM_ID = "8NLjevMMfZDViPWAcLNJTQij4crwVddE1N8SRwwrUSsd";
@@ -26,12 +28,9 @@ const String TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 // Initialize Solana Library
 IoTxChain solana(solanaRpcUrl);
 
-
-
 // Define the built-in LED pin for Arduino Nano ESP32
 // The Arduino Nano ESP32 has the built-in LED on pin 13
 #define LED_PIN LED_BUILTIN
-
 
 
 void connectToWiFi();
@@ -59,14 +58,8 @@ void setup() {
   digitalWrite(LED_PIN, LOW);
   digitalWrite(LED_BLUE, LOW);
   
-  // Initialize DHT sensor
-
-  getSolBalance();
-
-  //calculateDiscriminator("transfer_to_vault");
-  
+  getSolBalance();  
  
-  
   Serial.println("Setup complete.");
 }
 
@@ -91,18 +84,15 @@ void loop() {
   if (val == 'T')
   {
     delay(500);
-    delay(500);
-    Serial.println(" temperature is 100");
-    temperature = 101;//Serial.read();
-   // delay(5000);
+    Serial.println("Temperature is 101");
+    temperature = 101;
+    
     if (temperature > 0) {
       Serial.println("Setting temperature");
-
     setTemp(temperature);
     }
   }
-  
-  
+
 } 
 
 void connectToWiFi() {
@@ -122,7 +112,6 @@ void connectToWiFi() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 }
-
 
 
 void setTemp(float temperature) {
