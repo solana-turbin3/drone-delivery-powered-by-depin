@@ -61,16 +61,12 @@ void sendAnchorInstructionWithPDA(
       Serial.println("❌ Private key decode failed");
       return;
   }
-  
+
   Pubkey authority = Pubkey::fromBase58(PUBLIC_KEY_BASE58);
   Keypair signer = Keypair::fromPrivateKey(privateKey);
 
   std::vector<uint8_t> programId = base58ToPubkey(PROGRAM_ID);
-  //std::vector<uint8_t> tokenProgramId = base58ToPubkey(TOKEN_PROGRAM_ID); 
-
-  //String ata;
-  //solana.findAssociatedTokenAccount(PUBLIC_KEY_BASE58, MINT, ata);
-  //Pubkey pda = Pubkey::fromBase58(ata);
+  
 
   Pubkey temperaturePda = Pubkey::fromBase58(createPDAFromSeeds(customSeeds));
   
@@ -81,13 +77,7 @@ void sendAnchorInstructionWithPDA(
 
   Instruction ix(
       Pubkey{programId},
-      /* functionName == "transfer_to_vault" ? std::vector<AccountMeta>{
-          AccountMeta::writable(authority, true),
-          AccountMeta::writable(pda, false),
-          AccountMeta::writable(Pubkey::fromBase58(VAULT), false),
-          AccountMeta{Pubkey::fromBase58(MINT), false, false},
-          AccountMeta{Pubkey::fromBase58(TOKEN_PROGRAM_ID), false, false},
-      } :  */std::vector<AccountMeta>{
+      std::vector<AccountMeta>{
         AccountMeta::writable(authority, true),
         AccountMeta::writable(temperaturePda, false),
         AccountMeta{Pubkey::fromBase58("11111111111111111111111111111111"), false, false}
