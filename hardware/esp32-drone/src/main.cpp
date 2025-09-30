@@ -5,8 +5,11 @@
 #include "IoTxChain-lib.h"
 #include "SolanaUtils.h"
 
-const char* ssid    = "SSID";//2.4Ghz wifi for arduino esp32 nano
-const char* password = "PASSWORD";
+int val;
+float temperature;
+
+const char* ssid    = "SSID";//don't commit//2.4Ghz wifi for arduino esp32 nano
+const char* password = "PASSWORD";//don't commit
 
 // Solana RPC URL (Devnet)
 const String solanaRpcUrl = "https://api.devnet.solana.com"; // or mainnet/testnet
@@ -84,6 +87,20 @@ void loop() {
   // Wait for 1 second
   delay(1000);
   
+  val = Serial.read();
+  if (val == 'T')
+  {
+    delay(500);
+    delay(500);
+    Serial.println(" temperature is 100");
+    temperature = 101;//Serial.read();
+   // delay(5000);
+    if (temperature > 0) {
+      Serial.println("Setting temperature");
+
+    setTemp(temperature);
+    }
+  }
   
   
 } 
@@ -115,9 +132,11 @@ void setTemp(float temperature) {
     base58ToPubkey(PUBLIC_KEY_BASE58)
   };
 
-  // Prepare payload (temperature as float32 little-endian)
+  // Prepare payload (temperature as u32 little-endian)
+  uint32_t u32temperature = (uint32_t)temperature;
+
   std::vector<uint8_t> payload(4);
-  memcpy(payload.data(), &temperature, sizeof(float));
+  memcpy(payload.data(), &u32temperature, sizeof(float));
 
   sendAnchorInstructionWithPDA(String("set_temp"), seeds, payload);
 }
