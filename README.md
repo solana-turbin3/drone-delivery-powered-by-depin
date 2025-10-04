@@ -73,3 +73,12 @@ The project uses `platformio.ini` with the following key settings:
 
 
 
+## Data storage
+[Tapedrive](https://tapedrive.io/) (not live yet)
+[Data Anchor](https://www.termina.technology/post/data-anchor)
+
+## Rewards distribution
+Claim based
+Push based - [TukTuk](https://www.tuktuk.fun/docs/overview)
+
+
