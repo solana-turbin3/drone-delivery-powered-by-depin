@@ -55,3 +55,5 @@ let mollusk = Mollusk::new(&program_id, "my_program");
 //process our instruction
 // Execute the instruction and get the result.
 let result = mollusk.process_instruction(&instruction, &accounts);
+
+}
