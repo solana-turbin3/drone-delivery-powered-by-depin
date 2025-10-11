@@ -2,58 +2,80 @@
 
 mod tests {
   use {
-    mollusk_svm::Mollusk,
-    solana_sdk::{account::Account, instruction::{AccountMeta, Instruction}, pubkey::Pubkey},
+    anchor_lang::InstructionData,
+    mollusk_svm::{program, Mollusk},
+    solana_sdk::{
+      account::Account, 
+      instruction::{AccountMeta, Instruction}, 
+      native_token::LAMPORTS_PER_SOL,
+      pubkey},
   };
 
-    const ID: Pubkey = pubkey!("9zVb1etgUuQp2PSTgYUAEC3dCrqM9rJVAQxkg6uXnsTF");
-    const ADMIN: Pubkey = Pubkey::new_from_array([0x01; 32]);
+    const PROGRAM_ID: pubkey::Pubkey = pubkey!("9zVb1etgUuQp2PSTgYUAEC3dCrqM9rJVAQxkg6uXnsTF");
+    const ADMIN: pubkey::Pubkey = pubkey::Pubkey::new_from_array([0x01; 32]);
 
     #[test]
     fn test_initialize() {
-      let mollusk = Mollusk::new(&ID, "target/deploy/anchor-drone-delivery-marketplace.so");
+      //mollusk instance
+      let mollusk = Mollusk::new(&PROGRAM_ID, "../../target/deploy/anchor_drone_delivery_marketplace");
      
-      let mut context = Context::new(ID, None, None);
-  }
+      //pubkeys
+      let marketplace_name = "Drone Delivery Marketplace";
+      let (marketplace_pda, _marketplace_bump) = pubkey::Pubkey::find_program_address(
+        &[b"marketplace", marketplace_name.as_bytes()], &PROGRAM_ID);
+
+      let (system_program, system_account) = program::keyed_account_for_system_program();
+
+      // build the accounts
+      let admin_account = Account::new(1*LAMPORTS_PER_SOL, 0, &system_program);
+      let marketplace_account = Account::new(0, 0, &system_program);
+      
+      //get the accounts meta
+let ix_accounts: Vec<AccountMeta> = vec![
+  AccountMeta::new(ADMIN, true),
+  AccountMeta::new(marketplace_pda, false),
+  AccountMeta::new_readonly(system_program, false),
+ ];
+
+//data 
+let fee = 1;
+let data = (anchor_drone_delivery_marketplace::instruction::Initialize{
+  name: marketplace_name.to_string(), 
+  fee: fee,
+    })
+.data(); //different for pinocchio
 
 
-
-//pubkeys
-let program_id = Pubkey::new_unique();
-let key1 = Pubkey::new_unique();
-let key2 = Pubkey::new_unique();
-
-//mollusk instance
-
-// build the accounts
   //inject data to the accounts
 
-//get the accounts meta
+  //build IX
 let instruction = Instruction::new_with_bytes(
-  program_id,
-  &[],
-  vec![
-      AccountMeta::new(key1, false),
-      AccountMeta::new_readonly(key2, false),
-  ],
+  PROGRAM_ID,
+  &data,
+  ix_accounts,
 );
-//data 
 
 //build the transaction
 
 //get tx accounts
-
-
-
-let accounts = vec![
-  (key1, Account::default()),
-  (key2, Account::default()),
+let tx_accounts = &vec![
+  (ADMIN, admin_account.clone()),
+  (marketplace_pda, marketplace_account.clone()),
+  (system_program, system_account.clone()),
 ];
 
-let mollusk = Mollusk::new(&program_id, "my_program");
+
 
 //process our instruction
 // Execute the instruction and get the result.
-let result = mollusk.process_instruction(&instruction, &accounts);
+let _result = mollusk.process_instruction(&instruction, &tx_accounts);
+
+  }
+
+
+
+
+
+
 
 }
