@@ -108,8 +108,6 @@ public:
         config.valid = true;
 
         Serial.println("WiFi configuration loaded successfully");
-        Serial.print("   SSID: ");
-        Serial.println(config.ssid);
 
         return config;
     }
