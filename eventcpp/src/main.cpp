@@ -161,8 +161,6 @@ void initializeHardware() {
 
 void connectToWiFi() {
     Serial.print("Attempting to connect to WiFi...");
-    Serial.print(" SSID: ");
-    Serial.println(wifiConfig.ssid);
     
     WiFi.begin(wifiConfig.ssid.c_str(), wifiConfig.password.c_str());
     
