@@ -14,7 +14,7 @@ pub struct ReadyToFly<'info> {
         bump = drone_state.bump,
     )]
     pub drone_state: Account<'info, DroneState>,
-    pub system_program: Program<'info, System>,
+    
 }
 
 impl<'info> ReadyToFly<'info> {
