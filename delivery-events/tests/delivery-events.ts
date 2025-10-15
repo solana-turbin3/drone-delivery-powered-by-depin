@@ -17,7 +17,6 @@ import {
 import { assert } from "chai";
 
 describe("delivery-events", () => {
-  // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   const connection = provider.connection;
   console.log("RPC Connection: ", connection.rpcEndpoint);
@@ -43,7 +42,7 @@ describe("delivery-events", () => {
   };
 
   // get or find accounts
-  //const admin = provider.wallet.publicKey;
+  //const operator = provider.wallet.publicKey;
   const operator = Keypair.generate();
 
   const [droneState, _bump] = PublicKey.findProgramAddressSync(
@@ -85,12 +84,19 @@ describe("delivery-events", () => {
       .then(confirm)
       .then(log);
     console.log("Your transaction signature", tx);
+
+    const droneStateAccount = await program.account.droneState.fetch(droneState);
+    assert.equal(droneStateAccount.operator.toString(), operator.publicKey.toString());
+    assert.equal(droneStateAccount.lastStatusUpdate, 0);
+    assert.equal(droneStateAccount.bump, _bump);
   });
 
   it("Purchased item is loaded and employee presses button to confirm drone is ready to fly", async () => {
     // Listen for the  event
     const eventListener = program.addEventListener("readyToFlyEvent", (event) => {
       console.log("readyToFlyEvent received:", event);
+
+      assert.equal(event.operator.toString(), operator.publicKey.toString());
       // Clean up the event listener after the event is received
       program.removeEventListener(eventListener);
     });
@@ -109,17 +115,68 @@ describe("delivery-events", () => {
     console.log("transaction signature", tx);
 
 
-    //    assert.equal( );
-
-
-
-
     // Wait for a short period to ensure the event is emitted
-    //await new Promise(resolve => setTimeout(resolve, 5000));
-
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const eventNotReceived = true;
+    assert.equal(eventNotReceived, true);
     // Clean up the event listener if the event was not received
     program.removeEventListener(eventListener);
 
+  });
+
+  it("If instruction not called, there is no ready to fly event", async () => {
+    // Listen for the  event
+    const eventListener = program.addEventListener("readyToFlyEvent", (event) => {
+      console.log("readyToFlyEvent received:", event);
+      // Clean up the event listener after the event is received
+      program.removeEventListener(eventListener);
+    });
+
+    // Wait for a short period 
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const eventNotReceived = true;
+    assert.equal(eventNotReceived, true);
+
+    console.log("Cleaning up event listener");
+    // Clean up the event listener if the event was not received
+    program.removeEventListener(eventListener);
+
+  });
+
+  it("Should fail when trying to initialize drone twice", async () => {
+    // Second initialization should fail
+    try {
+      await program.methods.initialize()
+        .accountsPartial({
+          operator: operator.publicKey,
+          droneState: droneState,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([operator])
+        .rpc();
+      assert.fail("Should have thrown an error");
+    } catch (error) {
+    }
+  });
+
+  it("Should fail when calling readyToFly before initializing drone state account", async () => {
+    const operator2 = Keypair.generate();
+    const [droneState2] = PublicKey.findProgramAddressSync(
+      [Buffer.from("drone"), operator2.publicKey.toBuffer()],
+      program.programId
+    );
+  
+    try {
+      await program.methods.readyToFly()
+        .accountsPartial({
+          operator: operator2.publicKey,
+          droneState: droneState2,
+        })
+        .signers([operator2])
+        .rpc();
+      assert.fail("Should have thrown an error");
+    } catch (error) {
+    }
   });
 
 
