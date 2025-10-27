@@ -4,21 +4,17 @@
 #include <WiFi.h>
 #include "IoTxChain-lib.h"
 #include "SolanaUtils.h"
+#include "ssid.h"
+#include "keypair.h"
 
 int val;
 float temperature;
 
-const char* ssid    = "SSID";//don't commit //2.4Ghz wifi for arduino esp32 nano
-const char* password = "PASSWORD";//don't commit
 
 // Solana RPC URL (Devnet)
 const String solanaRpcUrl = "https://api.devnet.solana.com"; // or mainnet/testnet
 
-// Your Solana wallet (Base58 format)
-//don't commit
-const String PRIVATE_KEY_BASE58 = "PRIVATE_KEY_BASE58";  // 64-byte base58
-//don't commit
-const String PUBLIC_KEY_BASE58 = "";
+
 
 const String PROGRAM_ID = "8NLjevMMfZDViPWAcLNJTQij4crwVddE1N8SRwwrUSsd";
 const String MINT = "8MaXvmTFewPTD2oQoxjiCYPDU3BmvhZSHo5RBAi41Fek";
