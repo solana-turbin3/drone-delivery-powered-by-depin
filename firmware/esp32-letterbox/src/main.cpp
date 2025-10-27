@@ -7,7 +7,10 @@
 #include "ssid.h"
 #include "keypair.h"
 #include "AnchorEvents.h"
+#include <ESP32Servo.h>
 
+
+Servo servoMotor;
 
 int val;
 float temperature;
@@ -36,6 +39,8 @@ void onLetterboxSensorEvent(const AnchorEvent& event);
 // Define the built-in LED pin for Arduino Nano ESP32
 // The Arduino Nano ESP32 has the built-in LED on pin 13
 #define LED_PIN LED_BUILTIN
+#define SERVO_PIN 26 // ESP32 pin GPIO26 connected to servo motor
+
 
 
 void connectToWiFi();
@@ -63,7 +68,8 @@ void setup() {
   digitalWrite(LED_PIN, LOW);
   digitalWrite(LED_BLUE, LOW);
   
-  getSolBalance();  
+  servoMotor.attach(SERVO_PIN);  // attaches the servo on ESP32 pin
+
  
   Serial.println("Setup complete.");
 }
@@ -143,11 +149,14 @@ void setTemp(float temperature) {
 void listenForDroneArrival() {
   //if dronestatus= arrived
   //open letterbox, servo = 90 degrees
+  //    servoMotor.write(90);
+
 }
 
 void letterboxSensor() {
   //if letterbox sensor is triggered
   //close letterbox, servo = 0 degrees
+  //    servoMotor.write(0);
 }
 
 // Setup event listener
