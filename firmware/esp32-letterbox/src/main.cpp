@@ -6,6 +6,8 @@
 #include "SolanaUtils.h"
 #include "ssid.h"
 #include "keypair.h"
+#include "AnchorEvents.h"
+
 
 int val;
 float temperature;
@@ -17,12 +19,19 @@ const String solanaRpcUrl = "https://api.devnet.solana.com"; // or mainnet/testn
 
 
 const String PROGRAM_ID = "8NLjevMMfZDViPWAcLNJTQij4crwVddE1N8SRwwrUSsd";
-const String MINT = "8MaXvmTFewPTD2oQoxjiCYPDU3BmvhZSHo5RBAi41Fek";
-const String VAULT = "7yjCjijhaK7pqC21rwuzmwKaG9B6horHa4qzALHjjGZz";
-const String TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+
 
 // Initialize Solana Library
 IoTxChain solana(solanaRpcUrl);
+
+// Initialize Event Listener (global instance)
+AnchorEventListener* eventListener = nullptr;
+
+// Event handler callbacks
+void onTransferEvent(const AnchorEvent& event);
+void onTempSetEvent(const AnchorEvent& event);
+void onDroneArrivalEvent(const AnchorEvent& event);
+void onLetterboxSensorEvent(const AnchorEvent& event);
 
 // Define the built-in LED pin for Arduino Nano ESP32
 // The Arduino Nano ESP32 has the built-in LED on pin 13
@@ -89,6 +98,11 @@ void loop() {
     }
   }
 
+   // Poll for Anchor events
+   if (eventListener != nullptr && eventListener->isActive()) {
+    eventListener->poll();
+  }
+
 } 
 
 void connectToWiFi() {
@@ -124,4 +138,148 @@ void setTemp(float temperature) {
   memcpy(payload.data(), &u32temperature, sizeof(float));
 
   sendAnchorInstructionWithPDA(String("set_temp"), seeds, payload);
+}
+
+void listenForDroneArrival() {
+  //if dronestatus= arrived
+  //open letterbox, servo = 90 degrees
+}
+
+void letterboxSensor() {
+  //if letterbox sensor is triggered
+  //close letterbox, servo = 0 degrees
+}
+
+// Setup event listener
+void setupEventListener() {
+  Serial.println("\n=== 🎧 Setting up Anchor Event Listener ===");
+  
+  // Configure the event listener
+  EventListenerConfig config;
+  config.programId = PROGRAM_ID;  // Your Anchor program ID
+  config.pollIntervalMs = 30000;  // Poll every 30 seconds (reduced frequency)
+  config.maxEvents = 5;           // Check last 5 transactions
+  config.onlyConfirmed = true;    // Only confirmed transactions
+  config.startSlot = 0;           // Start from latest
+  
+  // Create event listener instance
+  eventListener = new AnchorEventListener(config);
+  
+  // Register event handlers for your program's events
+  // These must match your Anchor event struct names exactly!
+  eventListener->registerEventHandler("TempSetEvent", onTempSetEvent);
+  eventListener->registerEventHandler("TransferEvent", onTransferEvent);
+  
+  // You can also register with custom discriminators if needed
+  // Example: eventListener->registerEventHandlerWithDiscriminator("a1b2c3d4e5f60708", "CustomEvent", onCustomEvent);
+  
+  // Start listening
+  eventListener->startListening();
+  
+  Serial.println("✅ Event listener configured and started");
+}
+
+// Event handler implementations
+void onTransferEvent(const AnchorEvent& event) {
+  Serial.println("\nTRANSFER EVENT DETECTED!");
+  Serial.print("  Transaction: ");
+  Serial.println(event.signature);
+  Serial.print("  Slot: ");
+  Serial.println(event.slot);
+  
+  // Parse TransferEvent data structure:
+  // - amount: u64 (8 bytes)
+  // - vault_balance: u64 (8 bytes)
+  
+  // Decode base64 to get actual bytes
+  uint8_t decodedData[64];
+  extern int base64_decode(const String& encoded, uint8_t* output, int maxLen);
+  int decodedLen = base64_decode(event.rawData, decodedData, 64);
+  
+  if (decodedLen >= 24) {  // 8 bytes discriminator + 8 bytes amount + 8 bytes balance
+    // Skip discriminator (8 bytes) and parse values
+    uint64_t amount = 0;
+    uint64_t vaultBalance = 0;
+    
+    // Parse amount (little-endian u64 at offset 8)
+    for (int i = 0; i < 8; i++) {
+      amount |= ((uint64_t)decodedData[8 + i]) << (i * 8);
+    }
+    
+    // Parse vault_balance (little-endian u64 at offset 16)
+    for (int i = 0; i < 8; i++) {
+      vaultBalance |= ((uint64_t)decodedData[16 + i]) << (i * 8);
+    }
+    
+    Serial.print("  Amount: ");
+    Serial.print(amount);
+    Serial.println(" lamports");
+    Serial.print("  Vault Balance: ");
+    Serial.print(vaultBalance);
+    Serial.println(" lamports");
+    
+    // Flash Built-In LED pattern for transfer
+    for (int i = 0; i < 5; i++) {
+      digitalWrite(LED_PIN, LOW);
+      delay(50);
+      digitalWrite(LED_PIN, HIGH);
+      delay(50);
+    }
+  }
+}
+
+void onTempSetEvent(const AnchorEvent& event) {
+  Serial.println("\nTEMPERATURE SET EVENT!");
+  Serial.print("  Transaction: ");
+  Serial.println(event.signature);
+  
+  // Parse TempSetEvent data structure:
+  // - old_value: u32 (4 bytes)
+  // - new_value: u32 (4 bytes)
+  
+  // Decode base64 to get actual bytes
+  uint8_t decodedData[64];
+  extern int base64_decode(const String& encoded, uint8_t* output, int maxLen);
+  int decodedLen = base64_decode(event.rawData, decodedData, 64);
+  
+  if (decodedLen >= 16) {  // 8 bytes discriminator + 4 bytes old + 4 bytes new
+    // Skip discriminator (8 bytes) and parse values
+    uint32_t oldValue = 0;
+    uint32_t newValue = 0;
+    
+    // Parse old_value (little-endian u32 at offset 8)
+    for (int i = 0; i < 4; i++) {
+      oldValue |= ((uint32_t)decodedData[8 + i]) << (i * 8);
+    }
+    
+    // Parse new_value (little-endian u32 at offset 12)
+    for (int i = 0; i < 4; i++) {
+      newValue |= ((uint32_t)decodedData[12 + i]) << (i * 8);
+    }
+    
+    Serial.print("  Old Temperature: ");
+    Serial.println(oldValue);
+    Serial.print("  New Temperature: ");
+    Serial.println(newValue);
+  }
+  
+  // Flash Blue LED to indicate event
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(LED_BLUE, LOW);
+    delay(100);
+    digitalWrite(LED_BLUE, HIGH);
+    delay(100);
+  }
+}
+
+void onDroneArrivalEvent(const AnchorEvent& event) {
+  Serial.println("\nDRONE ARRIVAL EVENT DETECTED!");
+  Serial.print("  Transaction: ");
+  Serial.println(event.signature);
+}
+
+void onLetterboxSensorEvent(const AnchorEvent& event) {
+  Serial.println("\nLETTERBOX SENSOR EVENT DETECTED!");
+  Serial.print("  Transaction: ");
+  Serial.println(event.signature);
 }
