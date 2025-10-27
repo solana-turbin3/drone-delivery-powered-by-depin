@@ -9,8 +9,9 @@ drone-delivery-powered-by-depin/
 ├── anchor-drone-delivery/            # Anchor framework files
 ├── frontend/                         # Next.js
 ├── backend/                          
-├── hardware/                         
+├── firmware/                         
 │   ├── esp32-drone/                 # delivery drone
+|   
 │   └── docs/                        # Hardware documentation
 └── docs/                          # Architecture diagrams, whitepaper
 ```
@@ -19,7 +20,7 @@ drone-delivery-powered-by-depin/
 
 ### ESP32 Drone Development
 
-The ESP32 drone code is located in the `hardware/` directory
+The ESP32 drone code is located in the `firmware/` directory
 
 #### Prerequisites
 - [PlatformIO IDE](https://platformio.org/platformio-ide) or [VS Code with PlatformIO extension](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide)
@@ -75,10 +76,12 @@ The project uses `platformio.ini` with the following key settings:
 
 ## Data storage
 [Tapedrive](https://tapedrive.io/) (not live yet)
+
 [Data Anchor](https://www.termina.technology/post/data-anchor)
 
 ## Rewards distribution
 Claim based
+
 Push based - [TukTuk](https://www.tuktuk.fun/docs/overview)
 
 
