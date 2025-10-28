@@ -3,6 +3,12 @@ use anchor_lang::prelude::*;
 use crate::state::*;
 
 #[event]
+pub struct DroneAvailableEvent {
+    pub operator: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
 pub struct ReadyToFlyEvent {
     pub operator: Pubkey,
     pub timestamp: i64,
@@ -15,6 +21,17 @@ pub struct DroneArrivedEvent {
     pub status: DroneStatus,
 }
 
+#[event]
+pub struct DroneUnAvailableEvent {
+    pub operator: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct DroneErrorEvent {
+    pub operator: Pubkey,
+    pub timestamp: i64,
+}
 
 #[event]
 pub struct LetterboxOpenEvent {
