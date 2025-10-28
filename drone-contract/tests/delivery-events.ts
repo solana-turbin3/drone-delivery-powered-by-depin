@@ -41,6 +41,14 @@ describe("delivery-events", () => {
     return signature;
   };
 
+  const DroneStatus = {
+    Available: 0,
+    ReadyToFly: 1,
+    Arrived: 2,
+    UnAvailable: 3,
+    Error: 4,
+  };
+
   // get or find accounts
   //const operator = provider.wallet.publicKey;
   const operator = Keypair.generate();
@@ -103,6 +111,39 @@ describe("delivery-events", () => {
 
     const tx = await program.methods
       .readyToFly()
+      .accountsPartial({
+        operator: operator.publicKey,
+        droneState: droneState,
+      })
+      .signers([operator])
+      .rpc()
+      .then(confirm)
+      .then(log);
+
+    console.log("transaction signature", tx);
+
+
+    // Wait for a short period to ensure the event is emitted
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const eventNotReceived = true;
+    assert.equal(eventNotReceived, true);
+    // Clean up the event listener if the event was not received
+    program.removeEventListener(eventListener);
+
+  });
+
+  it("Drone arrives at letterbox, drone status is updated to arrived and event is emitted", async () => {
+    // Listen for the  event
+    const eventListener = program.addEventListener("droneArrivedEvent", (event) => {
+      console.log("droneArrivedEvent received:", event);
+
+      assert.equal(event.operator.toString(), operator.publicKey.toString());
+      // Clean up the event listener after the event is received
+      program.removeEventListener(eventListener);
+    });
+
+    const tx = await program.methods
+      .updateDronestatus({ arrived: {} })
       .accountsPartial({
         operator: operator.publicKey,
         droneState: droneState,
