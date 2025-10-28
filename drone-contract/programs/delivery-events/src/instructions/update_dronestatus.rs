@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::events::*;
 use crate::state::DroneState;
+use crate::DroneStatus;
 
 #[derive(Accounts)]
 pub struct UpdateDroneStatus<'info> {
@@ -17,7 +18,7 @@ pub struct UpdateDroneStatus<'info> {
     
 }
 
-/* impl<'info> UpdateDroneStatus<'info> {
+impl<'info> UpdateDroneStatus<'info> {
     pub fn update_dronestatus(&mut self, status: DroneStatus) -> Result<()> {
     let clock = Clock::get()?;
     let state = &mut self.drone_state;
@@ -26,6 +27,12 @@ pub struct UpdateDroneStatus<'info> {
     state.status = status;
     
     match status {
+        DroneStatus::Available => {
+            emit!(DroneAvailableEvent {
+                operator: self.operator.key(),
+                timestamp: clock.unix_timestamp,
+            });
+        }
         DroneStatus::ReadyToFly => {
             emit!(ReadyToFlyEvent {
                 operator: self.operator.key(),
@@ -39,8 +46,20 @@ pub struct UpdateDroneStatus<'info> {
                 status: status,
             });
         }
+        DroneStatus::UnAvailable => {
+            emit!(DroneUnAvailableEvent {
+                operator: self.operator.key(),
+                timestamp: clock.unix_timestamp,
+            });
+        }
+        DroneStatus::Error => {
+            emit!(DroneErrorEvent {
+                operator: self.operator.key(),
+                timestamp: clock.unix_timestamp,
+            });
+        }
     }
 
     Ok(())
     }
-} */
+}

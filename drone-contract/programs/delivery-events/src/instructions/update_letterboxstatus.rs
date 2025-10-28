@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::events::*;
 use crate::state::LetterboxState;
+use crate::LetterboxStatus;
 
 #[derive(Accounts)]
 pub struct UpdateLetterboxStatus<'info> {
@@ -17,7 +18,7 @@ pub struct UpdateLetterboxStatus<'info> {
     
 }
 
-/* impl<'info> UpdateLetterboxStatus<'info> {
+impl<'info> UpdateLetterboxStatus<'info> {
     pub fn update_letterboxstatus(&mut self, status: LetterboxStatus) -> Result<()> {
     
        /*  match status {
@@ -39,5 +40,5 @@ pub struct UpdateLetterboxStatus<'info> {
 
     Ok(())
     }
-} */
+}
 

@@ -27,7 +27,7 @@ pub mod delivery_events {
         Ok(())
     }
 
-   /*  pub fn update_dronestatus(ctx: Context<UpdateDroneStatus>, status: state::DroneState::DroneStatus) -> Result<()> {
+     pub fn update_dronestatus(ctx: Context<UpdateDroneStatus>, status: DroneStatus) -> Result<()> {
         ctx.accounts.update_dronestatus(status)?;
         Ok(())
     }
@@ -35,5 +35,5 @@ pub mod delivery_events {
     pub fn update_letterboxstatus(ctx: Context<UpdateLetterboxStatus>, status: LetterboxStatus) -> Result<()> {
         ctx.accounts.update_letterboxstatus(status)?;
         Ok(())
-    } */
+    }
 }
