@@ -6,6 +6,11 @@
 #include "SolanaUtils.h"
 #include "ssid.h"
 #include "keypair.h"
+#include "AnchorEvents.h"
+#include <ESP32Servo.h>
+
+
+Servo servoMotor;
 
 int val;
 float temperature;
@@ -17,20 +22,26 @@ const String solanaRpcUrl = "https://api.devnet.solana.com"; // or mainnet/testn
 
 
 const String PROGRAM_ID = "8NLjevMMfZDViPWAcLNJTQij4crwVddE1N8SRwwrUSsd";
-const String MINT = "8MaXvmTFewPTD2oQoxjiCYPDU3BmvhZSHo5RBAi41Fek";
-const String VAULT = "7yjCjijhaK7pqC21rwuzmwKaG9B6horHa4qzALHjjGZz";
-const String TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+
 
 // Initialize Solana Library
 IoTxChain solana(solanaRpcUrl);
 
+// Initialize Event Listener (global instance)
+AnchorEventListener* eventListener = nullptr;
+
+// Event handler callbacks
+void onDroneArrivalEvent(const AnchorEvent& event);
+void onLetterboxSensorEvent(const AnchorEvent& event);
+
 // Define the built-in LED pin for Arduino Nano ESP32
 // The Arduino Nano ESP32 has the built-in LED on pin 13
 #define LED_PIN LED_BUILTIN
+#define SERVO_PIN 26 // ESP32 pin GPIO26 connected to servo motor to open and close the letterbox
+
 
 
 void connectToWiFi();
-void setTemp(float temperature);
 
 void setup() {
   // Initialize serial communication for debugging
@@ -40,7 +51,7 @@ void setup() {
   delay(1000);
   
   // Print startup message
-  Serial.println("Arduino Nano ESP32 Example");
+  Serial.println("ESP32 ");
   Serial.println("Built-in LED will start blinking...");
 
   connectToWiFi();
@@ -54,7 +65,8 @@ void setup() {
   digitalWrite(LED_PIN, LOW);
   digitalWrite(LED_BLUE, LOW);
   
-  getSolBalance();  
+  servoMotor.attach(SERVO_PIN);  // attaches the servo on ESP32 pin
+
  
   Serial.println("Setup complete.");
 }
@@ -75,18 +87,10 @@ void loop() {
   
   // Wait for 1 second
   delay(1000);
-  
-  val = Serial.read();
-  if (val == 'T')
-  {
-    delay(500);
-    Serial.println("Temperature is 101");
-    temperature = 101;
-    
-    if (temperature > 0) {
-      Serial.println("Setting temperature");
-    setTemp(temperature);
-    }
+
+   // Poll for Anchor events
+   if (eventListener != nullptr && eventListener->isActive()) {
+    eventListener->poll();
   }
 
 } 
@@ -110,18 +114,60 @@ void connectToWiFi() {
 }
 
 
-void setTemp(float temperature) {
-  Serial.println("\n=== 🔹 setTemp() ===");
-  std::vector<std::vector<uint8_t>> seeds = {
-    {'t','e','m','p'},
-    base58ToPubkey(PUBLIC_KEY_BASE58)
-  };
 
-  // Prepare payload (temperature as u32 little-endian)
-  uint32_t u32temperature = (uint32_t)temperature;
 
-  std::vector<uint8_t> payload(4);
-  memcpy(payload.data(), &u32temperature, sizeof(float));
 
-  sendAnchorInstructionWithPDA(String("set_temp"), seeds, payload);
+
+
+// Setup event listener
+void setupEventListener() {
+  Serial.println("\n=== 🎧 Setting up Anchor Event Listener ===");
+  
+  // Configure the event listener
+  EventListenerConfig config;
+  config.programId = PROGRAM_ID;  // Your Anchor program ID
+  config.pollIntervalMs = 30000;  // Poll every 30 seconds (reduced frequency)
+  config.maxEvents = 5;           // Check last 5 transactions
+  config.onlyConfirmed = true;    // Only confirmed transactions
+  config.startSlot = 0;           // Start from latest
+  
+  // Create event listener instance
+  eventListener = new AnchorEventListener(config);
+  
+  // Register event handlers for your program's events
+  // These must match your Anchor event struct names exactly!
+  eventListener->registerEventHandler("DroneArrivedEvent", onDroneArrivalEvent);
+  eventListener->registerEventHandler("LetterboxSensorEvent", onLetterboxSensorEvent);
+  
+  // You can also register with custom discriminators if needed
+  // Example: eventListener->registerEventHandlerWithDiscriminator("a1b2c3d4e5f60708", "CustomEvent", onCustomEvent);
+  
+  // Start listening
+  eventListener->startListening();
+  
+  Serial.println("✅ Event listener configured and started");
 }
+
+// Event handler implementations
+
+
+void onDroneArrivalEvent(const AnchorEvent& event) {
+  Serial.println("\nDRONE ARRIVAL EVENT DETECTED!");
+  Serial.print("  Transaction: ");
+  Serial.println(event.signature);
+  servoMotor.write(90);//open letterbox for drone to deliver
+}
+
+void onLetterboxSensorEvent(const AnchorEvent& event) {
+  Serial.println("\nLETTERBOX SENSOR EVENT DETECTED!");
+  Serial.print("  Transaction: ");
+  Serial.println(event.signature);
+  servoMotor.write(0);//close letterbox
+}
+
+/*  void letterboxSensor() {
+  //if letterbox sensor is triggered
+  //close letterbox, servo = 0 degrees
+  //    servoMotor.write(0);
+}
+ */
