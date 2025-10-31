@@ -1,87 +1,99 @@
 # Drone Delivery Powered by DePIN
 
-(description)
+A decentralized drone delivery system built on Solana, enabling automated delivery coordination between drones and letterboxes through on-chain state management and events.
 
 ## Project Structure
 
 ```
 drone-delivery-powered-by-depin/
-├── anchor-drone-delivery/            # Anchor framework files
-├── frontend/                         # Next.js
-├── backend/                          
-├── firmware/                         
-│   ├── esp32-drone/                 # delivery drone
-|   
-│   └── docs/                        # Hardware documentation
-└── docs/                          # Architecture diagrams, whitepaper
+├── anchor-drone-delivery-marketplace/  # Marketplace Anchor program
+├── drone-contract/                     # Drone Delivery Anchor program
+│   ├── programs/
+│   │   └── delivery-events/           # Main contract (drone/letterbox state)
+│   └── tests/                          # Contract tests
+├── firmware/                           
+│   ├── esp32-letterbox/               # ESP32 letterbox firmware 
+│   ├── raspberry-pi5-drone/           # Raspberry Pi 5 drone controller
+│   └── eventcpp/                      # ESP32 drone firmware
+├── mobile-depin-drone/                # Mobile application
+└── docs/                               # Architecture diagrams, whitepaper
+    └── arc diagram/                    # System architecture diagrams
 ```
+
+## Solana Contracts
+
+### Drone Delivery Contract (`drone-contract/`)
+
+The main on-chain program for managing drone and letterbox state:
+
+- **Drone State**: Tracks drone operator, status (Available, ReadyToFly, Arrived, UnAvailable, Error), and last update timestamp
+- **Letterbox State**: Tracks letterbox owner, status (Open, Closed, Error), and last update timestamp
+- **Events**: Emits on-chain events for drone status changes and letterbox operations
+
+**Key Instructions:**
+- `initialize`: Initialize drone or letterbox accounts
+- `update_dronestatus`: Update drone status and emit events
+- `update_letterboxstatus`: Update letterbox status
+
+**Testing:**
+```bash
+cd drone-contract
+anchor test
+```
+
+### Marketplace Contract (`anchor-drone-delivery-marketplace/`)
+
+Marketplace for coordinating delivery orders and payments.
 
 ## Hardware Setup
 
-### ESP32 Drone Development
+For detailed hardware setup and firmware development instructions, see [firmware/README.md](firmware/README.md).
 
-The ESP32 drone code is located in the `firmware/` directory
-
-#### Prerequisites
-- [PlatformIO IDE](https://platformio.org/platformio-ide) or [VS Code with PlatformIO extension](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide)
-- ESP32 development board 
-- USB cable for programming
-
-#### Getting Started
-
-1. **Open the project in PlatformIO:**
-
-2. **Configure your WiFi credentials:**
-   Edit `src/main.cpp` and update:
-   ```cpp
-   const char* WIFI_SSID = "your_wifi_ssid";
-   const char* WIFI_PASSWORD = "your_wifi_password";
-   ```
-   Arduino esp32 only supports 2.4Ghz
-
-3. **Configure your pubkey and privkey**
-
-4. **Configure Solana RPC endpoint:**
-   Update the RPC URL in `src/SolanaUtils.cpp`:
-   ```cpp
-   const String RPC_URL = "https://api.devnet.solana.com";  // or your preferred RPC
-   ```
-
-5. **Build and upload:**
-  
-6. **Monitor serial output:**
-   
-
-
-#### Project Configuration
-
-The project uses `platformio.ini` with the following key settings:
-
-- **Board:** Arduino Nano ESP32
-- **Framework:** Arduino
-- **Libraries:** 
-  - IoTxChain (local Solana library)
-  - ArduinoJson
-  - Cryptographic libraries (SHA256, ECC)
-
-#### Key Features
-
-- **Solana Integration:** Send transactions to Solana blockchain
-- **WiFi Connectivity:** ESP32 WiFi capabilities
-- **Cryptographic Operations:** Ed25519 signing, Base58 encoding
-- **Anchor Program Support:** Interact with Solana Anchor programs
-- **Memory:** The project disables Bluetooth to save memory
+The firmware directory contains:
+- **ESP32 Letterbox** (`firmware/esp32-letterbox/`) - ESP32-based letterbox that monitors status and updates Solana
+- **ESP32 Drone** (`firmware/eventcpp/`) - ESP32-based delivery drone firmware with Solana integration
+- **Raspberry Pi 5 Drone** (`firmware/raspberry-pi5-drone/`) - Raspberry Pi 5 drone controller
+- Other firmware projects for testing and development
 
 
 
-## Data storage
-[Tapedrive](https://tapedrive.io/) (not live yet)
+## Data Storage
 
-[Data Anchor](https://www.termina.technology/post/data-anchor)
+- **[Tapedrive](https://tapedrive.io/)** (not live yet) - Decentralized data storage solution
+- **[Data Anchor](https://www.termina.technology/post/data-anchor)** - Anchor-based data storage patterns
 
-## Rewards distribution
-Claim based
+## Rewards Distribution
 
-Push based - [TukTuk](https://www.tuktuk.fun/docs/overview)
+- **Claim based**: Users manually claim rewards after completing deliveries
+- **Push based**: Automated reward distribution using [TukTuk](https://www.tuktuk.fun/docs/overview)
+
+## Development
+
+### Prerequisites
+
+- **Rust**: For Solana program development
+- **Anchor**: Solana framework (v0.31.1)
+- **Node.js & Yarn**: For TypeScript tests
+- **PlatformIO**: For firmware development
+- **Solana CLI**: For local validator and deployments
+
+### Building Contracts
+
+```bash
+# Build delivery events contract
+cd drone-contract
+anchor build
+
+# Build marketplace contract
+cd ../anchor-drone-delivery-marketplace
+anchor build
+```
+
+### Running Tests
+
+```bash
+cd drone-contract
+anchor test
+```
 
 
