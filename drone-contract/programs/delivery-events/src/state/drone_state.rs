@@ -13,6 +13,7 @@ pub struct DroneState {
 pub enum DroneStatus {
     Available,
     ReadyToFly,
+    Arrived,
     UnAvailable,
     Error
 }
