@@ -46,6 +46,8 @@ describe("anchor-drone-delivery-marketplace", () => {
     // get or find accounts
     //const admin = provider.wallet.publicKey;
     const admin = Keypair.generate();
+    const buyer = Keypair.generate();
+    const seller = Keypair.generate();
 
     let marketplace_name = "Drone Delivery Marketplace";
 
@@ -70,6 +72,10 @@ describe("anchor-drone-delivery-marketplace", () => {
     it("Airdrop", async () => {
       await anchor.getProvider().connection.requestAirdrop(admin.publicKey, 2 * anchor.web3.LAMPORTS_PER_SOL)
         .then(confirmAirdropTx);
+      await anchor.getProvider().connection.requestAirdrop(buyer.publicKey, 2 * anchor.web3.LAMPORTS_PER_SOL)
+        .then(confirmAirdropTx);
+      await anchor.getProvider().connection.requestAirdrop(seller.publicKey, 2 * anchor.web3.LAMPORTS_PER_SOL)
+        .then(confirmAirdropTx);
     });
 
   it("Marketplace initialized!", async () => {
@@ -87,5 +93,62 @@ describe("anchor-drone-delivery-marketplace", () => {
     console.log("Your transaction signature", tx);
   });
 
+  it("Pharmacy lists medicine for purchase for drone delivery", async () => {
+    let product_name = "Cough medicine";
+    let product_description = "Relieves cough symptoms";
+    let product_price = 10;//USDT ot USDC
+    const tx = await program.methods.listProduct(product_name, product_description, product_price)
+    .accountsPartial({
+      seller: admin.publicKey,
+    })
+    .signers([admin])
+      .rpc()
+      .then(confirm)
+      .then(log);
+    console.log("Your transaction signature", tx);
+  });
+
+  xit("Buyer purchases medicine for drone delivery", async () => {
+    let product_name = "Cough medicine";
+    let quantity = 1;
+    const tx = await program.methods.purchaseProduct(product_name, quantity)
+    .accountsPartial({
+      buyer: buyer.publicKey,
+    })
+    .signers([buyer])
+    .rpc()
+      .then(confirm)
+      .then(log);
+    console.log("Your transaction signature", tx);
+  });
+
+  it("When order is placed, event is emitted to notify seller and to drone operators to accept the order", async () => {
+    let product_name = "Cough medicine";
+    let quantity = 1;
+
+    const [product, _bump] = PublicKey.findProgramAddressSync(
+      [Buffer.from("product"), Buffer.from(product_name)],
+      program.programId
+    );
+    const eventListener = program.addEventListener("orderPlacedEvent", (event) => {
+      console.log("orderPlacedEvent received:", event);
+      assert.equal(event.buyer.toString(), buyer.publicKey.toString());
+      assert.equal(event.product.toString(), product_name);
+      assert.equal(event.quantity, 1);
+      assert.equal(event.price, 10);
+    });
+
+    
+    const tx = await program.methods.purchaseProduct(product_name, quantity)
+    .accountsPartial({
+      buyer: buyer.publicKey,
+    })
+    .signers([buyer])
+    .rpc()
+    .then(confirm)
+    .then(log);
+    console.log("Your transaction signature", tx);
+
+  });
 
 });
