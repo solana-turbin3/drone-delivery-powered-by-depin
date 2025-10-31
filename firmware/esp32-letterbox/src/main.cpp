@@ -31,20 +31,17 @@ IoTxChain solana(solanaRpcUrl);
 AnchorEventListener* eventListener = nullptr;
 
 // Event handler callbacks
-void onTransferEvent(const AnchorEvent& event);
-void onTempSetEvent(const AnchorEvent& event);
 void onDroneArrivalEvent(const AnchorEvent& event);
 void onLetterboxSensorEvent(const AnchorEvent& event);
 
 // Define the built-in LED pin for Arduino Nano ESP32
 // The Arduino Nano ESP32 has the built-in LED on pin 13
 #define LED_PIN LED_BUILTIN
-#define SERVO_PIN 26 // ESP32 pin GPIO26 connected to servo motor
+#define SERVO_PIN 26 // ESP32 pin GPIO26 connected to servo motor to open and close the letterbox
 
 
 
 void connectToWiFi();
-void setTemp(float temperature);
 
 void setup() {
   // Initialize serial communication for debugging
@@ -54,7 +51,7 @@ void setup() {
   delay(1000);
   
   // Print startup message
-  Serial.println("Arduino Nano ESP32 Example");
+  Serial.println("ESP32 ");
   Serial.println("Built-in LED will start blinking...");
 
   connectToWiFi();
@@ -90,19 +87,6 @@ void loop() {
   
   // Wait for 1 second
   delay(1000);
-  
-  val = Serial.read();
-  if (val == 'T')
-  {
-    delay(500);
-    Serial.println("Temperature is 101");
-    temperature = 101;
-    
-    if (temperature > 0) {
-      Serial.println("Setting temperature");
-    setTemp(temperature);
-    }
-  }
 
    // Poll for Anchor events
    if (eventListener != nullptr && eventListener->isActive()) {
@@ -130,34 +114,10 @@ void connectToWiFi() {
 }
 
 
-void setTemp(float temperature) {
-  Serial.println("\n=== 🔹 setTemp() ===");
-  std::vector<std::vector<uint8_t>> seeds = {
-    {'t','e','m','p'},
-    base58ToPubkey(PUBLIC_KEY_BASE58)
-  };
 
-  // Prepare payload (temperature as u32 little-endian)
-  uint32_t u32temperature = (uint32_t)temperature;
 
-  std::vector<uint8_t> payload(4);
-  memcpy(payload.data(), &u32temperature, sizeof(float));
 
-  sendAnchorInstructionWithPDA(String("set_temp"), seeds, payload);
-}
 
-void listenForDroneArrival() {
-  //if dronestatus= arrived
-  //open letterbox, servo = 90 degrees
-  //    servoMotor.write(90);
-
-}
-
-void letterboxSensor() {
-  //if letterbox sensor is triggered
-  //close letterbox, servo = 0 degrees
-  //    servoMotor.write(0);
-}
 
 // Setup event listener
 void setupEventListener() {
@@ -176,8 +136,8 @@ void setupEventListener() {
   
   // Register event handlers for your program's events
   // These must match your Anchor event struct names exactly!
-  eventListener->registerEventHandler("TempSetEvent", onTempSetEvent);
-  eventListener->registerEventHandler("TransferEvent", onTransferEvent);
+  eventListener->registerEventHandler("DroneArrivedEvent", onDroneArrivalEvent);
+  eventListener->registerEventHandler("LetterboxSensorEvent", onLetterboxSensorEvent);
   
   // You can also register with custom discriminators if needed
   // Example: eventListener->registerEventHandlerWithDiscriminator("a1b2c3d4e5f60708", "CustomEvent", onCustomEvent);
@@ -189,106 +149,25 @@ void setupEventListener() {
 }
 
 // Event handler implementations
-void onTransferEvent(const AnchorEvent& event) {
-  Serial.println("\nTRANSFER EVENT DETECTED!");
-  Serial.print("  Transaction: ");
-  Serial.println(event.signature);
-  Serial.print("  Slot: ");
-  Serial.println(event.slot);
-  
-  // Parse TransferEvent data structure:
-  // - amount: u64 (8 bytes)
-  // - vault_balance: u64 (8 bytes)
-  
-  // Decode base64 to get actual bytes
-  uint8_t decodedData[64];
-  extern int base64_decode(const String& encoded, uint8_t* output, int maxLen);
-  int decodedLen = base64_decode(event.rawData, decodedData, 64);
-  
-  if (decodedLen >= 24) {  // 8 bytes discriminator + 8 bytes amount + 8 bytes balance
-    // Skip discriminator (8 bytes) and parse values
-    uint64_t amount = 0;
-    uint64_t vaultBalance = 0;
-    
-    // Parse amount (little-endian u64 at offset 8)
-    for (int i = 0; i < 8; i++) {
-      amount |= ((uint64_t)decodedData[8 + i]) << (i * 8);
-    }
-    
-    // Parse vault_balance (little-endian u64 at offset 16)
-    for (int i = 0; i < 8; i++) {
-      vaultBalance |= ((uint64_t)decodedData[16 + i]) << (i * 8);
-    }
-    
-    Serial.print("  Amount: ");
-    Serial.print(amount);
-    Serial.println(" lamports");
-    Serial.print("  Vault Balance: ");
-    Serial.print(vaultBalance);
-    Serial.println(" lamports");
-    
-    // Flash Built-In LED pattern for transfer
-    for (int i = 0; i < 5; i++) {
-      digitalWrite(LED_PIN, LOW);
-      delay(50);
-      digitalWrite(LED_PIN, HIGH);
-      delay(50);
-    }
-  }
-}
 
-void onTempSetEvent(const AnchorEvent& event) {
-  Serial.println("\nTEMPERATURE SET EVENT!");
-  Serial.print("  Transaction: ");
-  Serial.println(event.signature);
-  
-  // Parse TempSetEvent data structure:
-  // - old_value: u32 (4 bytes)
-  // - new_value: u32 (4 bytes)
-  
-  // Decode base64 to get actual bytes
-  uint8_t decodedData[64];
-  extern int base64_decode(const String& encoded, uint8_t* output, int maxLen);
-  int decodedLen = base64_decode(event.rawData, decodedData, 64);
-  
-  if (decodedLen >= 16) {  // 8 bytes discriminator + 4 bytes old + 4 bytes new
-    // Skip discriminator (8 bytes) and parse values
-    uint32_t oldValue = 0;
-    uint32_t newValue = 0;
-    
-    // Parse old_value (little-endian u32 at offset 8)
-    for (int i = 0; i < 4; i++) {
-      oldValue |= ((uint32_t)decodedData[8 + i]) << (i * 8);
-    }
-    
-    // Parse new_value (little-endian u32 at offset 12)
-    for (int i = 0; i < 4; i++) {
-      newValue |= ((uint32_t)decodedData[12 + i]) << (i * 8);
-    }
-    
-    Serial.print("  Old Temperature: ");
-    Serial.println(oldValue);
-    Serial.print("  New Temperature: ");
-    Serial.println(newValue);
-  }
-  
-  // Flash Blue LED to indicate event
-  for (int i = 0; i < 3; i++) {
-    digitalWrite(LED_BLUE, LOW);
-    delay(100);
-    digitalWrite(LED_BLUE, HIGH);
-    delay(100);
-  }
-}
 
 void onDroneArrivalEvent(const AnchorEvent& event) {
   Serial.println("\nDRONE ARRIVAL EVENT DETECTED!");
   Serial.print("  Transaction: ");
   Serial.println(event.signature);
+  servoMotor.write(90);//open letterbox for drone to deliver
 }
 
 void onLetterboxSensorEvent(const AnchorEvent& event) {
   Serial.println("\nLETTERBOX SENSOR EVENT DETECTED!");
   Serial.print("  Transaction: ");
   Serial.println(event.signature);
+  servoMotor.write(0);//close letterbox
 }
+
+/*  void letterboxSensor() {
+  //if letterbox sensor is triggered
+  //close letterbox, servo = 0 degrees
+  //    servoMotor.write(0);
+}
+ */
