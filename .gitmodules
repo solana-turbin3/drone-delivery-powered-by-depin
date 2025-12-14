@@ -1,0 +1,3 @@
+[submodule "mobile-depin-drone"]
+	path = mobile-depin-drone
+	url = https://github.com/Hsien-HsiuLiao/mobile-depin-drone.git
